@@ -34,7 +34,6 @@ import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.view.IWindowManager;
->>>>>>> 67eee8c... InCallUI: Incoming Call in Background (1/3)
 
 import com.android.services.telephony.common.Call;
 import com.android.services.telephony.common.Call.Capabilities;

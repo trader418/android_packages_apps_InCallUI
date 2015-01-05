@@ -60,8 +60,6 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
     private boolean mDialpadVisible;
     private Context mContext;
 
-    private Context mContext;
-
     // True if the keyboard is currently *not* hidden
     // Gets updated whenever there is a Configuration change
     private boolean mIsHardKeyboardOpen;

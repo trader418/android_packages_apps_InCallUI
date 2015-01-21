@@ -22,6 +22,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.telecom.AudioState;
@@ -57,6 +58,7 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
     private boolean mIsPhoneOutgoing = false;
     private boolean mIsPhoneOffhook = false;
     private boolean mProximitySpeaker = false;
+    private int mProxSpeakerDelay = 100;
     private boolean mDialpadVisible;
     private Context mContext;
 
@@ -284,6 +286,15 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
 
     private void setProxSpeaker(final boolean speaker) {
         final int audioMode = mAudioModeProvider.getAudioMode();
+        final Handler handler = new Handler();
+        final Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                TelecomAdapter.getInstance().setAudioRoute(AudioMode.SPEAKER);
+            }
+        };
+        mProxSpeakerDelay = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.PROXIMITY_AUTO_SPEAKER_DELAY, 100);
         if (mIsPhoneOffhook && Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.PROXIMITY_AUTO_SPEAKER, 0) == 1
                 && audioMode != AudioMode.WIRED_HEADSET
@@ -294,9 +305,10 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
                         || (Settings.System.getInt(mContext.getContentResolver(),
                         Settings.System.PROXIMITY_AUTO_SPEAKER_INCALL_ONLY, 0) == 1
                         && !mIsPhoneOutgoing)) {
-                    TelecomAdapter.getInstance().setAudioRoute(AudioMode.SPEAKER);
+                    handler.postDelayed(runnable, mProxSpeakerDelay);
                 }
             } else if (!speaker) {
+                handler.removeCallbacks(runnable);
                 TelecomAdapter.getInstance().setAudioRoute(AudioMode.EARPIECE);
                 updateProximitySensorMode();
             }

@@ -62,6 +62,14 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
     private boolean mDialpadVisible;
     private Context mContext;
 
+    private final Handler mHandler = new Handler();
+    private final Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            TelecomAdapter.getInstance().setAudioRoute(AudioMode.SPEAKER);
+        }
+    };
+
     // True if the keyboard is currently *not* hidden
     // Gets updated whenever there is a Configuration change
     private boolean mIsHardKeyboardOpen;
@@ -115,6 +123,9 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
         boolean hasOngoingCall = InCallState.INCALL == newState && callList.hasLiveCall();
         boolean isOffhook = (InCallState.OUTGOING == newState) || hasOngoingCall;
         boolean isOutgoing = (InCallState.OUTGOING == newState);
+
+        // remove any pending audio changes scheduled
+        mHandler.removeCallbacks(mRunnable);
 
         if (isOffhook != mIsPhoneOffhook) {
             mIsPhoneOffhook = isOffhook;
@@ -286,32 +297,40 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
 
     private void setProxSpeaker(final boolean speaker) {
         final int audioMode = mAudioModeProvider.getAudioMode();
-        final Handler handler = new Handler();
-        final Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                TelecomAdapter.getInstance().setAudioRoute(AudioMode.SPEAKER);
-            }
-        };
+
         mProxSpeakerDelay = Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.PROXIMITY_AUTO_SPEAKER_DELAY, 100);
-        if (mIsPhoneOffhook && Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PROXIMITY_AUTO_SPEAKER, 0) == 1
-                && audioMode != AudioMode.WIRED_HEADSET
-                && audioMode != AudioMode.BLUETOOTH) {
-            if (speaker && audioMode != AudioMode.SPEAKER) {
-                if (Settings.System.getInt(mContext.getContentResolver(),
-                        Settings.System.PROXIMITY_AUTO_SPEAKER_INCALL_ONLY, 0) == 0
-                        || (Settings.System.getInt(mContext.getContentResolver(),
-                        Settings.System.PROXIMITY_AUTO_SPEAKER_INCALL_ONLY, 0) == 1
-                        && !mIsPhoneOutgoing)) {
-                    handler.postDelayed(runnable, mProxSpeakerDelay);
+
+            // if phone off hook (call in session), and prox speaker feature is on
+            if (mIsPhoneOffhook && Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.PROXIMITY_AUTO_SPEAKER, 0) == 1
+                    // as long as AudioMode isn't currently wired headset or bluetooth
+                    && audioMode != AudioMode.WIRED_HEADSET
+                    && audioMode != AudioMode.BLUETOOTH) {
+
+                // okay, we're good to start switching audio mode on proximity
+
+                // if proximity sensor determines audio mode should be speaker,
+                // but it currently isn't
+                if (speaker && audioMode != AudioMode.SPEAKER) {
+
+                    // if prox incall only is off, we set to speaker as long as phone
+                    // is off hook, ignoring whether or not the call state is outgoing
+                    if (Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.PROXIMITY_AUTO_SPEAKER_INCALL_ONLY, 0) == 0
+                            // or if prox incall only is on, we have to check the call
+                            // state to decide if AudioMode should be speaker
+                            || (Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.PROXIMITY_AUTO_SPEAKER_INCALL_ONLY, 0) == 1
+                            && !mIsPhoneOutgoing)) {
+                        mHandler.removeCallbacks(mRunnable);
+                        mHandler.postDelayed(mRunnable, mProxSpeakerDelay);
+                    }
+                } else if (!speaker) {
+                    mHandler.removeCallbacks(mRunnable);
+                    TelecomAdapter.getInstance().setAudioRoute(AudioMode.EARPIECE);
+                    updateProximitySensorMode();
                 }
-            } else if (!speaker) {
-                handler.removeCallbacks(runnable);
-                TelecomAdapter.getInstance().setAudioRoute(AudioMode.EARPIECE);
-                updateProximitySensorMode();
             }
-        }
     }
 }

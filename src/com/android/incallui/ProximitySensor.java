@@ -147,6 +147,10 @@ public class ProximitySensor implements AccelerometerListener.OrientationListene
         if (mHasIncomingCall) {
             updateProximitySensorMode();
         }
+
+        if (mHasIncomingCall) {
+            updateProximitySensorMode();
+        }
     }
 
     @Override

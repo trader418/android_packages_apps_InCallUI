@@ -6,6 +6,8 @@ LOCAL_MODULE_TAGS := optional
 
 LOCAL_RESOURCE_DIR := $(LOCAL_PATH)/res_cm
 
+LOCAL_AAPT_INCLUDE_ALL_RESOURCES := true
+
 # Without any resource, we don't depend on framework-res in the build
 # system, but we actually do to compile AndroidManifest.xml. Avoid
 # the issue by setting an SDK version to compile against a historical

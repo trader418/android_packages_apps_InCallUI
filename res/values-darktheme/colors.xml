@@ -19,5 +19,8 @@
     <color name="dialpad_digits_text_color">#ffffff</color>
     <color name="incall_dialpad_background">@*android:color/material_blue_grey</color>
     <color name="glowpad_incoming_widget_background_tint">@*android:color/material_blue_grey</color>
+    <color name="popup_menu_color">#ffffff</color>
+    <color name="incall_action_bar_text_color">#ffffff</color>
+
 </resources>
 

@@ -26,6 +26,7 @@ import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.provider.Settings;
 import android.telecom.DisconnectCause;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
@@ -540,7 +541,10 @@ public class InCallPresenter implements CallList.Listener,
             mInCallActivity.dismissKeyguard(false);
         }
 
-        wakeUpScreen();
+        if (isWakingUpScreen()) {
+            wakeUpScreen();
+        }
+
     }
 
     /**
@@ -845,6 +849,11 @@ public class InCallPresenter implements CallList.Listener,
 
     public boolean isChangingConfigurations() {
         return mIsChangingConfigurations;
+    }
+
+    private boolean isWakingUpScreen() {
+        return Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.WAKEUP_SCREEN_WHEN_CALL_DISCONNECTED, 0) == 1;
     }
 
     /*package*/
